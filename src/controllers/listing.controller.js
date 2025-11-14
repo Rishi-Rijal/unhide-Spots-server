@@ -34,7 +34,7 @@ const querySchema = z.object({
   lng: z.coerce.number().optional(),
   distanceKm: z.coerce.number().min(0).max(250).default(0),
 
-  sort: z.enum(["newest", "rating_desc", "rating_asc", "likes_desc", "likes_asc", "distance"]).default("newest"),
+  sort: z.enum(["newest", "rating_desc", "rating_asc", "likes_desc", "likes_asc", "distance"]).default("rating_desc"),
   limit: z.coerce.number().int().min(1).max(100).default(20),
   cursor: z.string().optional(),
 }).refine((q) => (q.sort !== "distance") || (Number.isFinite(q.lat) && Number.isFinite(q.lng)), {
