@@ -6,13 +6,13 @@ const router = Router();
 
 //route for listings
 router
-    .route("/")
+    .route("/all")
     .get(getListings)
-    .post(upload.fields([{ name: "images", maxCount: 5 }]), createListing);
+    .post(upload.fields([{ name: "images", maxCount: 50 }]), createListing);
 
 router
     .route("/filter")
-    .post(getListingFiltered);
+    .get(getListingFiltered);
 
 router
     .route("/:id")
