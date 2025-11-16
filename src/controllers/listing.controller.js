@@ -217,6 +217,7 @@ const getListingFiltered = AsyncHandler(async (req, res) => {
         near: { type: "Point", coordinates: [lng, lat] },
         distanceField: "distanceMeters",
         spherical: true,
+        key: "location",
       };
 
       if (hasGeoFilter) {
@@ -236,7 +237,6 @@ const getListingFiltered = AsyncHandler(async (req, res) => {
       if (Object.keys(match).length) pipeline.push({ $match: match });
       if (Object.keys(cursorMatch).length) pipeline.push({ $match: cursorMatch });
     }
-
 
     // Project only what the list needs
     pipeline.push({
@@ -317,11 +317,11 @@ const getListingFiltered = AsyncHandler(async (req, res) => {
     console.log(err)
     // temp for debugging
     return res.status(500).json({
-    message: 'Failed to fetch listings',
-    error: err?.message,
-    code: err?.code,
-    name: err?.name,
-  });
+      message: 'Failed to fetch listings',
+      error: err?.message,
+      code: err?.code,
+      name: err?.name,
+    });
   }
 });
 
