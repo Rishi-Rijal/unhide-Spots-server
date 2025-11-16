@@ -4,7 +4,6 @@ import AsyncHandler from '../utils/AsyncHandler.js';
 import { uploadOnCloudinary } from '../utils/uploadCloudinary.js';
 import { z } from "zod";
 import mongoose from "mongoose";
-import { fa } from 'zod/v4/locales';
 
 /* ---------- validation helpers ---------- */
 
@@ -28,7 +27,7 @@ const querySchema = z.object({
   minRating: z.coerce.number().min(0).max(5).optional(),
   difficulty: z.enum(["Easy", "Moderate", "Challenging"]).optional(),
   verifiedOnly: z.union([z.literal("true"), z.literal("false")]).optional()
-    .transform((v) => (v === undefined ? true : v === "true")),
+  .transform((v) => (v === undefined ? undefined : v === "true")),
 
   lat: z.coerce.number().optional(),
   lng: z.coerce.number().optional(),
@@ -47,8 +46,7 @@ const querySchema = z.object({
 // create a new listing
 
 const createListing = AsyncHandler(async(req, res)=>{
-    const {name, description, categories, tags, latitude, longitude, tips} = req.body;
-
+    const {name, description, categories, tags, latitude, longitude, tipsPermits, tripsBestSeason, tripsDifficulty, tipsExtra} = req.body;
     if(!name || !description || !categories || !latitude || !longitude){
         throw new ApiError(400, 'Please provide all required fields');
     }
@@ -66,8 +64,7 @@ const createListing = AsyncHandler(async(req, res)=>{
             return {url: uploadResult.secure_url, public_id: uploadResult.public_id, format: uploadResult.format};
         })
     );
-
-
+    
     const newListing = await Listing.create({
         name,
         description,
@@ -75,7 +72,7 @@ const createListing = AsyncHandler(async(req, res)=>{
         tags,
         location,
         images: imagesInfo,
-        extraAdvice: tips
+        extraAdvice: tipsExtra || ""
     });
 
     const createdListing = Listing.findById(newListing._id);
@@ -132,7 +129,7 @@ const deleteListing = AsyncHandler(async(req, res)=>{
 
 const getListingFiltered = AsyncHandler(async (req, res) => {
   try {
-    const parsed = querySchema.safeParse(req.body);
+    const parsed = querySchema.safeParse(req.query ?? {})
     if (!parsed.success) {
       return res.status(400).json({
         error: "Invalid query",
@@ -144,7 +141,6 @@ const getListingFiltered = AsyncHandler(async (req, res) => {
       categories, tags, minRating, difficulty, verifiedOnly,
       lat, lng, distanceKm, sort, limit, cursor,
     } = parsed.data;
-
     const match = {};
     if (verifiedOnly) match.isVerified = true;
     if (categories?.length) match.categories = { $in: categories };
