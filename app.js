@@ -5,7 +5,7 @@ import cookieParser from "cookie-parser";
 const app = express();
 
 const allowedOrigins = [
-    "https://zealous-desert-0541d1303.3.azurestaticapps.net/",
+    "https://zealous-desert-0541d1303.3.azurestaticapps.net",
     "http://localhost:5173"
 ];
 
@@ -39,7 +39,7 @@ import listingRouter from "./src/routes/listing.routes.js";
 app.get("/", (req, res) => {
     res.send("API is running...");
 });
-app.use("/api/v1/listings", listingRouter);
+app.use("/api/v1/listing", listingRouter);
 
 //routes decleration
 //app.use("/api/v1/users", userRouter);
