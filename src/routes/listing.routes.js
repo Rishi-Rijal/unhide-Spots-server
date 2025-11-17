@@ -1,5 +1,14 @@
 import { Router } from "express";
-import { createListing, getListings, getListing, updateListing, deleteListing, getListingFiltered } from "../controllers/listing.controller.js";
+import {
+    createListing,
+    getListings,
+    getListing,
+    updateListing,
+    deleteListing,
+    getListingFiltered,
+    likeListing,
+    unlikeListing
+} from "../controllers/listing.controller.js";
 import { upload } from "../middlewares/multer.middleware.js";
 
 const router = Router();
@@ -20,6 +29,10 @@ router
     .patch(updateListing)
     .delete(deleteListing);
 
+router
+    .route("/:id/like")
+    .post(likeListing)
+    .patch(unlikeListing);
 
 
 
