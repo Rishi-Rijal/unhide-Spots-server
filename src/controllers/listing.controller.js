@@ -1,7 +1,7 @@
 import Listing from '../models/listing.model.js';
 import ApiError from '../utils/ApiError.js';
 import AsyncHandler from "../utils/asyncHandler.js"
-import { uploadOnCloudinary } from '../utils/uploadCloudinary.js';
+import { uploadOnCloudinary, removeFromCloudinary } from '../utils/uploadCloudinary.js';
 import { z } from "zod";
 import mongoose from "mongoose";
 
@@ -96,7 +96,17 @@ const getListing = AsyncHandler(async (req, res) => {
   if (!listing) {
     throw new ApiError(404, 'Listing not found');
   }
-  res.status(200).json(listing);
+
+  // Include whether the current user has liked this listing (if user info is available)
+  const userId = req.user?.id || req.body?.userId || null;
+  const likedByUser = userId && Array.isArray(listing.likedBy)
+    ? listing.likedBy.some((uid) => uid.toString() === userId.toString())
+    : false;
+
+  const result = listing.toObject({ getters: true });
+  result.likedByUser = likedByUser;
+
+  res.status(200).json(result);
 });
 
 const updateListing = AsyncHandler(async (req, res) => {
@@ -123,6 +133,9 @@ const deleteListing = AsyncHandler(async (req, res) => {
   const deletedListing = await Listing.findByIdAndDelete(id);
   if (!deletedListing) {
     throw new ApiError(404, 'Listing not found');
+  }
+  for (const img of deletedListing.images) {
+    await removeFromCloudinary(img.public_id);
   }
 
   res.status(200).json({ message: 'Listing deleted successfully' });
@@ -321,46 +334,220 @@ const getListingFiltered = AsyncHandler(async (req, res) => {
 
 const likeListing = AsyncHandler(async (req, res) => {
   const { id } = req.params;
-  if (!id) {
-    throw new ApiError(401, "id is required");
+  const userId = req.user?.id || req.body?.userId || null;
+  if (!id) throw new ApiError(400, "id is required");
+
+  const listing = await Listing.findById(id);
+  if (!listing) throw new ApiError(404, "Listing not found");
+
+  // If we have a user id, enforce per-user uniqueness using likedBy
+  if (userId) {
+    const alreadyLiked = Array.isArray(listing.likedBy) && listing.likedBy.some((uid) => uid.toString() === userId.toString());
+    if (alreadyLiked) {
+      return res.status(200).json({ message: "Already liked", data: listing });
+    }
+
+    listing.likedBy = listing.likedBy || [];
+    listing.likedBy.push(mongoose.Types.ObjectId(userId));
   }
 
-  const updatedListing = await Listing.findByIdAndUpdate(
-    id,
-    { $inc: { likesCount: 1 } },
-    { new: true }
-  );
+  // Always increment the public likesCount (anonymous likes are allowed)
+  listing.likesCount = (listing.likesCount || 0) + 1;
+  await listing.save();
 
-  if (!updatedListing) {
-    throw new ApiError(400, "Listing not found")
-  }
-  res.status(200).json({
-    message: "Like added successfully",
-    data: updatedListing
-  });
-})
+  res.status(200).json({ message: "Like added successfully", data: listing });
+});
 
 const unlikeListing = AsyncHandler(async (req, res) => {
   const { id } = req.params;
-  if (!id) {
-    throw new ApiError(400, "id is required")
+  const userId = req.user?.id || req.body?.userId || null;
+  if (!id) throw new ApiError(400, "id is required");
+
+  const listing = await Listing.findById(id);
+  if (!listing) throw new ApiError(404, "Listing not found");
+
+  // If userId present, enforce that they previously liked
+  if (userId) {
+    if (!Array.isArray(listing.likedBy) || !listing.likedBy.some((uid) => uid.toString() === userId.toString())) {
+      return res.status(200).json({ message: "Not previously liked", data: listing });
+    }
+
+    listing.likedBy = listing.likedBy.filter((uid) => uid.toString() !== userId.toString());
+    listing.likesCount = Math.max(0, (listing.likesCount || 1) - 1);
+    await listing.save();
+
+    return res.status(200).json({ message: "Like removed successfully", data: listing });
+  }
+
+  // Anonymous unlike: allow decrement (client is expected to track ownership via localStorage)
+  listing.likesCount = Math.max(0, (listing.likesCount || 1) - 1);
+  await listing.save();
+  res.status(200).json({ message: "Like removed successfully", data: listing });
+
+});
+
+const updateDescription = AsyncHandler(async (req, res) => {
+  const { id } = req.params;
+  const { description } = req.body;
+  if (!description) {
+    throw new ApiError(400, 'Description is required');
   }
   const updatedListing = await Listing.findByIdAndUpdate(
     id,
-    { $inc: { likesCount: -1 } },
+    { description },
     { new: true }
   );
 
   if (!updatedListing) {
-    throw new ApiError(400, "Listing not found")
+    throw new ApiError(400, "Listing not found");
   }
+
   res.status(200).json({
-    message: "Like added successfully",
+    message: "Description updated successfully",
     data: updatedListing
   });
+});
 
+const updateTips = AsyncHandler(async (req, res) => {
+  const { id } = req.params;
+  const { extraAdvice, bestSeason, difficulty, permits } = req.body;
+  const updateData = {};
 
-})
+  if (extraAdvice !== undefined) updateData.extraAdvice = extraAdvice;
+  if (bestSeason !== undefined) updateData.bestSeason = bestSeason;
+  if (difficulty !== undefined) updateData.difficulty = difficulty;
+  if (permits !== undefined) updateData.permits = permits;
+  const updatedListing = await Listing.findByIdAndUpdate(
+    id,
+    updateData,
+    { new: true }
+  );
+  if (!updatedListing) {
+    throw new ApiError(400, "Listing not found");
+  }
+  res.status(200).json({
+    message: "Tips updated successfully",
+    data: updatedListing
+  });
+});
+
+const updateTitle = AsyncHandler(async (req, res) => {
+  const { id } = req.params;
+  const { title } = req.body; 
+  if (!title) {
+    throw new ApiError(400, 'Title is required');
+  }
+  const updatedListing = await Listing.findByIdAndUpdate(
+    id,
+    { name: title },
+    { new: true }
+  );
+
+  if (!updatedListing) {
+    throw new ApiError(400, "Listing not found");
+  }
+
+  res.status(200).json({
+    message: "Title updated successfully",
+    data: updatedListing
+  });
+});
+
+const removeImage = AsyncHandler(async (req, res) => {
+  const { id } = req.params;
+  const { public_id } = req.body; 
+  if (!public_id) {
+    throw new ApiError(400, 'public_id is required');
+  }
+  const listing = await Listing.findById(id);
+  if (!listing) {
+    throw new ApiError(400, "Listing not found");
+  } 
+  listing.images = listing.images.filter(img => img.public_id !== public_id);
+  await removeFromCloudinary(public_id);
+  await listing.save();
+
+  res.status(200).json({
+    message: "Image removed successfully",
+    data: listing
+  });
+});
+
+const addImage = AsyncHandler(async (req, res) => {
+  const { id } = req.params;
+  const images = req.files?.images || []; 
+  if (images.length === 0) {
+    throw new ApiError(400, 'At least one image is required');
+  }
+  const listing = await Listing.findById(id);
+  if (!listing) {
+    throw new ApiError(400, "Listing not found");
+  }
+  const uploadedImages = await Promise.all(
+    images.map(async (image) => {
+      const uploadResult = await uploadOnCloudinary(image.path);
+      return {
+        url: uploadResult.secure_url,
+        public_id: uploadResult.public_id,
+      };
+    })
+  );
+
+  listing.images.push(...uploadedImages);
+  await listing.save();
+
+  res.status(200).json({
+    message: "Image added successfully",
+    data: listing
+  });
+});
+
+const updateLocation = AsyncHandler(async (req, res) => {
+  const { id } = req.params;
+  const { latitude, longitude } = req.body;   
+  if (latitude === undefined || longitude === undefined) {
+    throw new ApiError(400, 'Latitude and Longitude are required');
+  }
+  const location = {
+    type: 'Point',
+    coordinates: [longitude, latitude]
+  };
+  const updatedListing = await Listing.findByIdAndUpdate( 
+    id,
+    { location },
+    { new: true }
+  );
+
+  if (!updatedListing) {
+    throw new ApiError(400, "Listing not found");
+  }
+
+  res.status(200).json({
+    message: "Location updated successfully",
+    data: updatedListing
+  });
+}); 
+
+const updateTagsAndCategories = AsyncHandler(async (req, res) => {
+  const { id } = req.params;
+  const { tags, categories } = req.body;
+  const updateData = {};
+
+  if (tags !== undefined) updateData.tags = tags;
+  if (categories !== undefined) updateData.categories = categories;
+  const updatedListing = await Listing.findByIdAndUpdate(
+    id,
+    updateData,
+    { new: true }
+  );
+  if (!updatedListing) {
+    throw new ApiError(400, "Listing not found");
+  }
+  res.status(200).json({
+    message: "Tags and Categories updated successfully",
+    data: updatedListing
+  });
+});
 
 export {
   createListing,
@@ -370,5 +557,12 @@ export {
   deleteListing,
   getListingFiltered,
   likeListing,
-  unlikeListing
+  unlikeListing,
+  updateDescription,
+  updateTips,
+  updateTitle,
+  updateLocation,
+  removeImage,
+  addImage,
+  updateTagsAndCategories,
 };
