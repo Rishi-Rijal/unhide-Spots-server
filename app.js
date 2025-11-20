@@ -35,13 +35,15 @@ app.use(cookieParser());
 // routes
 //import userRouter from "./routes/user.routes.js";
 import listingRouter from "./src/routes/listing.routes.js";
-import reviewRouter from "./src/routes/review.routes.js"
+import reviewRouter from "./src/routes/review.routes.js";
+import userRouter from "./src/routes/user.routes.js";
 
 app.get("/", (req, res) => {
     res.send("API is running...");
 });
 app.use("/api/v1/listing", listingRouter);
-app.use("/api/v1/review", reviewRouter)
+app.use("/api/v1/review", reviewRouter);
+app.use("/api/v1/user", userRouter);
 
 //routes decleration
 //app.use("/api/v1/users", userRouter);
