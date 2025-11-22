@@ -5,6 +5,7 @@ import {
     updateReview,
     deleteReview
 } from "../controllers/review.controller.js";
+import { verifyJWT } from "../controllers/auth.controller.js";
 
 const router = Router();
 
@@ -16,7 +17,7 @@ router
 
 router
     .route("/:reviewId")
-    .patch(updateReview)
-    .delete(deleteReview);
+    .patch(verifyJWT, updateReview)
+    .delete(verifyJWT, deleteReview);
 
 export default router
