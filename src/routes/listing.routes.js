@@ -17,6 +17,7 @@ import {
     updateTagsAndCategories,
 } from "../controllers/listing.controller.js";
 import { upload } from "../middlewares/multer.middleware.js";
+import { verifyJWT } from "../controllers/auth.controller.js";
 
 const router = Router();
 
@@ -25,7 +26,7 @@ const router = Router();
 router
     .route("/")
     .get(getListings)
-    .post(upload.fields([{ name: "images", maxCount: 50 }]), createListing);
+    .post(verifyJWT, upload.fields([{ name: "images", maxCount: 50 }]), createListing);
 
 router
     .route("/filter")
@@ -34,8 +35,8 @@ router
 router
     .route("/:id")
     .get(getListing)
-    .patch(updateListing)
-    .delete(deleteListing);
+    .patch(verifyJWT, updateListing)
+    .delete(verifyJWT, deleteListing);
 
 router
     .route("/:id/like")
@@ -44,27 +45,24 @@ router
 
 router
     .route("/:id/description")
-    .patch(updateDescription);
+    .patch(verifyJWT, updateDescription);
 
 router
     .route("/:id/tips")
-    .patch(updateTips);
-
+    .patch(verifyJWT, updateTips);
 router
     .route("/:id/title")
-    .patch(updateTitle);
+    .patch(verifyJWT, updateTitle);
 
 router
     .route("/:id/location")
-    .patch(updateLocation);
-
+    .patch(verifyJWT, updateLocation);
 router
     .route("/:id/images")
     .post(upload.fields([{ name: "images", maxCount: 50 }]), addImage)
-    .delete(removeImage);
-
+    .delete(verifyJWT, removeImage);
 router
     .route("/:id/tags-categories")
-    .patch(updateTagsAndCategories);
+    .patch(verifyJWT, updateTagsAndCategories);
 
 export default router;
