@@ -3,6 +3,16 @@ import mongoose from "mongoose";
 
 dotenv.config({ path: "./.env" });
 
+// Prevent Mongoose from creating collections or building indexes automatically at runtime.
+// This avoids triggering Cosmos DB container provisioning or index builds during requests
+// (e.g. during OAuth login). In development you may enable `autoIndex` for convenience.
+mongoose.set("autoCreate", false);
+if (process.env.NODE_ENV === "development") {
+    mongoose.set("autoIndex", true);
+} else {
+    mongoose.set("autoIndex", false);
+}
+
 const connectDB = async () => {
     try {
         const MONGO_URI =  process.env.ISPROD === 'true' ? process.env.MONGO_URI_PROD : process.env.MONGO_URI
