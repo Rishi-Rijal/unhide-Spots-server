@@ -20,7 +20,7 @@ const listUsers = AsyncHandler(async (req, res) => {
     .select("-password -refreshToken -passwordResetToken -passwordResetExpires")
     .skip((page - 1) * limit)
     .limit(limit)
-    .sort({ createdAt: -1 });
+    .sort({ _id: -1 });
 
   return res.status(200).json({ success: true, data: { users, total, page, limit } });
 });
@@ -65,7 +65,7 @@ const listListings = AsyncHandler(async (req, res) => {
   const listings = await Listing.find(filter)
     .skip((page - 1) * limit)
     .limit(limit)
-    .sort({ createdAt: -1 });
+    .sort({ _id: -1 });
 
   return res.status(200).json({ success: true, data: { listings, total, page, limit } });
 });

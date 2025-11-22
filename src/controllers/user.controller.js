@@ -33,8 +33,8 @@ const registerUser = AsyncHandler(async (req, res) => {
     if (existingUser) {
         throw new ApiError(400, "User with given email already exists");
     }
-    // temp fix for admin creation
-    const newUser = await User.create({ email, fullName: name, password, isAdmin:true });
+    
+    const newUser = await User.create({ email, fullName: name, password, isAdmin: false });
     if (!newUser) throw new ApiError(500, "Failed to create user");
 
     // response
