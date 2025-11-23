@@ -2,6 +2,7 @@ import { User } from "../models/user.model.js";
 import { ApiError } from "../utils/ApiError.js";
 import AsyncHandler from "../utils/asyncHandler.js";
 import jwt from "jsonwebtoken";
+import Listing from "../models/listing.model.js";
 
 
 const verifyJWT = AsyncHandler(async (req, res, next) => {
@@ -43,4 +44,38 @@ const verifyAdmin = AsyncHandler(async (req, res, next) => {
     }
 });
 
-export { verifyJWT, verifyAdmin }
+const verifyOwner = AsyncHandler(async (req, res, next) => {
+  const resourceId = req.params.id;
+  const resource = await Listing.findById(resourceId);
+
+  if (!resource) {
+    throw new ApiError(404, "Resource not found");
+  }
+
+  if (resource.author.toString() === req.user._id.toString()) {
+    next();
+  } else {
+    throw new ApiError(403, "Forbidden: Owners only");
+  }
+});
+
+// Allow either an admin OR the owner of the resource to proceed.
+const verifyAdminOrOwner = AsyncHandler(async (req, res, next) => {
+  const resourceId = req.params.id;
+  const resource = await Listing.findById(resourceId);
+
+  if (!resource) {
+    throw new ApiError(404, "Resource not found");
+  }
+
+  const isOwner = req.user && resource.author.toString() === req.user._id.toString();
+  const isAdmin = req.user && req.user.isAdmin;
+
+  if (isAdmin || isOwner) {
+    return next();
+  }
+
+  throw new ApiError(403, "Forbidden: Admin or Owner required");
+});
+
+export { verifyJWT, verifyAdmin, verifyOwner, verifyAdminOrOwner }
