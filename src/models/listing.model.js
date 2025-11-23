@@ -119,11 +119,16 @@ const listingSchema = new mongoose.Schema(
       type: String,
       trim: true
     },
+    author: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
+      required: true
+    },
   },
   { timestamps: true }
 );
 
-// Indexes (define with the schema)
+// Indexes 
 listingSchema.index({ location: "2dsphere" });              // distance
 listingSchema.index({ averageRating: -1, createdAt: -1 });  // rating_desc
 listingSchema.index({ likesCount: -1, createdAt: -1 });     // likes_desc
