@@ -568,12 +568,7 @@ const sendSuggestionEmail = AsyncHandler(async (req, res) => {
   if (!listing) {
   throw new ApiError(404, 'Listing not found');
   }
-
-  const owner = listing.author;
-  const recipient = "rishirijal2025@example.com";
-
-  // Log recipient choice for debugging
-  console.log(`[sendSuggestionEmail] listingId=${id} ownerEmail=${owner?.email || 'none'} chosenRecipient=${recipient}`);
+  const recipient = "rishirijal2025@gmail.com";
 
   const listingUrl = `${(process.env.FRONTEND_URL || '').replace(/\/$/, '')}/listing/${id}`;
 
@@ -591,18 +586,19 @@ const sendSuggestionEmail = AsyncHandler(async (req, res) => {
   });
 
   const subject = `Suggestion for listing: ${listing.name} — ${field}`;
-  const reporterInfo = (name || email) ? `${name}${email ? ` <${email}>` : ''}` : 'Anonymous';
-  const text = `A suggestion was submitted for listing "${listing.name}" (ID: ${id}).\n\nField: ${field}\nSuggestion:\n${suggestion}\n\nReporter: ${reporterInfo}\n\nListing: ${listingUrl}`;
+  const reporterInfo = (name || email) ? `${name}${email ? ` &lt;${email}&gt;` : ''}` : 'Anonymous';
+  const text = `A suggestion was submitted for listing "${listing.name}" (ID: ${id}).\n\nField: ${field}\nSuggestion:\n${suggestion}\n\nReporter: ${reporterInfo}\n\n Email: ${email}\nListing: ${listingUrl}`;
   const html = `
   <p>A suggestion was submitted for listing <strong>${listing.name}</strong> (ID: ${id}).</p>
   <p><strong>Field:</strong> ${field}</p>
   <p><strong>Suggestion:</strong><br/>${suggestion.replace(/\n/g, '<br/>')}</p>
   <p><strong>Reporter:</strong> ${reporterInfo}</p>
+  <p>Email: ${email}</p>
   <p><a href="${listingUrl}">View listing</a></p>
   `;
 
   const mailOptions = {
-    from: `${process.env.EMAIL_FROM_NAME || 'Unhide Nepal'} <${process.env.SMTP_EMAIL}>`,
+    from: `${'Unhide Nepal'} <${process.env.SMTP_EMAIL}>`,
     to: recipient,
     subject,
     text,
@@ -610,9 +606,6 @@ const sendSuggestionEmail = AsyncHandler(async (req, res) => {
   };
 
   await transporter.sendMail(mailOptions);
-
-  console.log('[sendSuggestionEmail] mail sent', { to: recipient, subject });
-
   return res.status(200).json({ success: true, message: 'Suggestion submitted' });
 });
 

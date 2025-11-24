@@ -21,7 +21,7 @@ const sendContactMessage = AsyncHandler(async (req, res) => {
     },
   });
 
-  const recipient = "rishirijal2025@example.com";
+  const recipient = "rishirijal2025@gmail.com";
 
   const subject = `Contact message from ${name}`;
   const text = `You received a contact message:\n\nFrom: ${name} <${email}>\n\nMessage:\n${message}`;
@@ -32,7 +32,7 @@ const sendContactMessage = AsyncHandler(async (req, res) => {
   `;
 
   await transporter.sendMail({
-    from: `${process.env.SMTP_EMAIL || 'Unhide Nepal'} <${process.env.SMTP_EMAIL}>`,
+    from: `${'Unhide Nepal'} <${process.env.SMTP_EMAIL}>`,
     to: recipient,
     subject,
     text,
