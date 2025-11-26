@@ -20,8 +20,6 @@ import { verifyJWT, verifyAdmin, verifyAdminOrOwner } from "../controllers/auth.
 
 const router = Router();
 
-// route for listings (collection)
-// changed from `/all` to `/` for a standard RESTful collection endpoint
 router
     .route("/")
     .post(verifyJWT, upload.fields([{ name: "images", maxCount: 50 }]), createListing);
