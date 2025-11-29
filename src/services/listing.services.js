@@ -12,49 +12,50 @@ import {
 import { removeImages } from '../utils/uploadCloudinary.js';
 
 const createListingService = async (data) => {
-	const {
-		author, name, description, categories,
-		tags, latitude, longitude, permitsRequired,
-		permitsDescription, bestSeason, difficulty,
-		extraAdvice, physicalAddress, uploadedImages
-	} = data;
+    const {
+        author, name, description, categories,
+        tags, latitude, longitude, permitsRequired,
+        permitsDescription, bestSeason, difficulty,
+        extraAdvice, physicalAddress, uploadedImages
+    } = data;
 
-	const location = {
-		type: 'Point',
-		coordinates: [longitude, latitude]
-	};
+    const location = {
+        type: 'Point',
+        coordinates: [longitude, latitude]
+    };
 
-	try {
-		const [newListing] = await Listing.create({
-			name,
-			description,
-			categories,
-			tags,
-			location,
-			bestSeason,
-			difficulty,
-			permitsRequired,
-			permitsDescription,
-			physicalAddress,
-			extraAdvice,
-			author,
-			images: uploadedImages,
-		});
+    try {
+        const newListing = await Listing.create({
+            name,
+            description,
+            categories,
+            tags,
+            location,
+            bestSeason,
+            difficulty,
+            permitsRequired,
+            permitsDescription,
+            physicalAddress,
+            extraAdvice,
+            author,
+            images: uploadedImages,
+        });
 
-		const userUpdate = await User.findByIdAndUpdate(
-			author,
-			{ $push: { listings: newListing._id } },
-			{ new: true }
-		);
+        const userUpdate = await User.findByIdAndUpdate(
+            author,
+            { $push: { listings: newListing._id } },
+            { new: true }
+        );
 
-		if (!userUpdate) {
-			throw new ApiError(404, "User not found");
-		}
+        if (!userUpdate) {
+            await Listing.findByIdAndDelete(newListing._id);
+            throw new ApiError(404, "User not found");
+        }
 
-		return newListing;
-	} catch (error) {
-		throw error;
-	} 
+        return newListing;
+    } catch (error) {
+        throw error;
+    } 
 };
 
 const getListingService = async (listingId, userId) => {
