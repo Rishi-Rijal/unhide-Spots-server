@@ -5,6 +5,12 @@ const booleanStringSchema = z.union([
     z.literal("false").transform(() => false),
 ]);
 
+const stringToArray = z.preprocess((val) => {
+    if (val === undefined || val === null) return [];
+    if (Array.isArray(val)) return val;
+    return [val];
+}, z.array(z.string()));
+
 const ObjectIdSchema = z.string({
     required_error: "Object ID is required",
     invalid_type_error: "Object ID must be a string",
@@ -47,8 +53,8 @@ const createListingSchema = z.object({
 
 
 const filterListingsSchema = z.object({
-    categories: z.array(z.string()).optional(),
-    tags: z.array(z.string()).optional(),
+    categories: stringToArray.optional(),
+    tags: stringToArray.optional(),
     minRating: z.coerce.number().min(0).max(5).optional(),
     difficulty: z.enum(["Easy", "Moderate", "Challenging", "Extreme"]).optional(),
     verifiedOnly: z.union([z.literal("true"), z.literal("false")]).optional()

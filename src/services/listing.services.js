@@ -83,14 +83,23 @@ const deleteListingService = async (listingId) => {
 	if (!deletedListing) {
 		throw new ApiError(404, 'Listing not found');
 	}	
-	deletedListing.images.map(async (img) => {
-		try {
-			await removeImages([img.public_id]);
-		} catch (err) {
-			throw new ApiError(500, "Error removing image from Cloudinary");
+	if (Array.isArray(deletedListing.images) && deletedListing.images.length) {
+		const removalErrors = [];
+		await Promise.all(
+			deletedListing.images.map(async (img) => {
+				try {
+					await removeImages([{ public_id: img.public_id }]);
+				} catch (err) {
+					removalErrors.push({ public_id: img.public_id, error: err?.message || err });
+					console.error('Error removing image from Cloudinary for', img.public_id, err);
+				}
+			})
+		);
+		if (removalErrors.length) {
+			// attach non-fatal removal errors to the returned object for diagnostics
+			deletedListing._imageRemovalErrors = removalErrors;
 		}
-
-	});
+	}
 
 	return deletedListing;
 };
@@ -307,7 +316,7 @@ const updateLocationService = async (listingId, { latitude, longitude }) => {
 		coordinates: [longitude, latitude]
 	};
 	const updatedListing = await Listing.findByIdAndUpdate(
-		id,
+		listingId,
 		{ location },
 		{ new: true }
 	);
