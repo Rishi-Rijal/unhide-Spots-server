@@ -12,7 +12,7 @@ const app = express();
 const defaultAllowed = [
     "https://zealous-desert-0541d1303.3.azurestaticapps.net",
     "http://localhost:5173",
-    "unhidenepal.live",
+    "https://unhidenepal.live",
 ];
 
 const allowedOrigins = process.env.FRONTEND_URL
