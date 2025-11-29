@@ -33,7 +33,6 @@ const createListing = AsyncHandler(async (req, res) => {
 		const errorMessage = parsedData.error.errors.map(e => e.message).join(', ');
 		throw new ApiError(400, errorMessage);
 	}
-	console.log("Parsed listing data:", parsedData.data);
 	const images = req.files?.images || [];
 	const uploadedImages = await uploadImages(images);
 
