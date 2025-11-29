@@ -25,7 +25,7 @@ const createListingService = async (data) => {
 	};
 
 	try {
-		const [newListing] = await Listing.create([{
+		const [newListing] = await Listing.create({
 			name,
 			description,
 			categories,
@@ -39,12 +39,12 @@ const createListingService = async (data) => {
 			extraAdvice,
 			author,
 			images: uploadedImages,
-		}], { session });
+		});
 
 		const userUpdate = await User.findByIdAndUpdate(
 			author,
 			{ $push: { listings: newListing._id } },
-			{ new: true, session }
+			{ new: true }
 		);
 
 		if (!userUpdate) {
