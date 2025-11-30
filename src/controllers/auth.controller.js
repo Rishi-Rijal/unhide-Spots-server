@@ -68,7 +68,9 @@ const verifyAdminOrOwner = AsyncHandler(async (req, res, next) => {
   if (!resource) {
     throw new ApiError(404, "Resource not found");
   }
-  const isOwner = req.user && resource.author.toString() === req.user._id.toString();
+  
+  // Check if author and user._id exist before calling toString
+  const isOwner = req.user && req.user._id && resource.author && resource.author.toString() === req.user._id.toString();
   const isAdmin = req.user && req.user.isAdmin;
 
   if (isAdmin || isOwner) {

@@ -241,10 +241,10 @@ const unlikeListingService = async (listingId, userId) => {
 	}
 }
 
-const updateDescriptionService = async (listingId, updateData) => {
+const updateDescriptionService = async (listingId, description) => {
 	const updatedListing = await Listing.findByIdAndUpdate(
 		listingId,
-		{ description: updateData },
+		{ description },
 		{ new: true }
 	);
 	if (!updatedListing) {
@@ -266,10 +266,10 @@ const updateTipsService = async (listingId, updateData) => {
 	return updatedListing;
 };
 
-const updateTitleService = async (listingId, updateData) => {
+const updateTitleService = async (listingId, title) => {
 	const updatedListing = await Listing.findByIdAndUpdate(
 		listingId,
-		{ name: updateData },
+		{ name: title },
 		{ new: true }
 	);
 
