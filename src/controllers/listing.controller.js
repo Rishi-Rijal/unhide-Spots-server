@@ -230,7 +230,7 @@ const createListingWithAgent = AsyncHandler(async (req, res) => {
 	if (!place) {
 		throw new ApiError(400, 'Place name is required');
 	}
-	const { testAddListingAgent } = await import('./agent.controller.js');
+	const { testAddListingAgent } = await import('./agent.controller.ts');
 	
 	const result = await testAddListingAgent(place, authorId.toString());
 	
