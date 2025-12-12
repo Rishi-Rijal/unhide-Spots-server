@@ -55,10 +55,16 @@ router
     .get(passport.authenticate("google", { scope: ["profile", "email"], session: false }));
 
 
+const allowedOrigins = process.env.FRONTEND_URL
+    ? process.env.FRONTEND_URL.split(",").map((s) => s.trim()).filter(Boolean)
+    : defaultAllowed;
+
+const primaryFrontendUrl = allowedOrigins[0];
+
 router
     .route("/auth/google/callback")
     .get(
-        passport.authenticate("google", { session: false, failureRedirect: `${process.env.FRONTEND_URL}/login` }),
+        passport.authenticate("google", { session: false, failureRedirect: `${primaryFrontendUrl}/login` }),
         googleAuthCallback
     );
 

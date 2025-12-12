@@ -32,7 +32,7 @@ const registerUser = AsyncHandler(async (req, res) => {
     if (existingUser) {
         throw new ApiError(400, "User with given email already exists");
     }
-    
+
     const newUser = await User.create({ email, fullName: name, password, isAdmin: false });
     if (!newUser) throw new ApiError(500, "Failed to create user");
 
@@ -205,7 +205,7 @@ const generatePasswordResetToken = async (req, res) => {
     const transporter = nodemailer.createTransport({
         host: process.env.SMTP_HOST,
         port: smtpPort,
-        secure: smtpSecure, 
+        secure: smtpSecure,
         auth: {
             user: process.env.SMTP_EMAIL,
             pass: process.env.SMTP_PASSWORD,
@@ -320,18 +320,23 @@ const cookieOptionsForOAuth = {
 };
 
 const googleAuthCallback = AsyncHandler(async (req, res) => {
-  const user = req.user;
-  if (!user) {
-    throw new ApiError(401, "Authentication failed");
-  }
+    const user = req.user;
+    if (!user) {
+        throw new ApiError(401, "Authentication failed");
+    }
 
-  const { accessToken, refreshToken } = await generateAccessAndRefreshToken(user._id);
+    const { accessToken, refreshToken } = await generateAccessAndRefreshToken(user._id);
 
-  return res
-    .status(200)
-    .cookie("accessToken", accessToken, cookieOptionsForOAuth)
-    .cookie("refreshToken", refreshToken, cookieOptionsForOAuth)
-    .redirect(`${process.env.FRONTEND_URL}/auth/success`);
+    const allowedOrigins = process.env.FRONTEND_URL
+        ? process.env.FRONTEND_URL.split(",").map((s) => s.trim()).filter(Boolean)
+        : defaultAllowed;
+    const primaryFrontendUrl = allowedOrigins[0];
+
+    return res
+        .status(200)
+        .cookie("accessToken", accessToken, cookieOptionsForOAuth)
+        .cookie("refreshToken", refreshToken, cookieOptionsForOAuth)
+        .redirect(`${primaryFrontendUrl}/auth/success`);
 });
 
 export {

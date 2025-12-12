@@ -5,11 +5,18 @@ const booleanStringSchema = z.union([
     z.literal("false").transform(() => false),
 ]);
 
-const stringToArray = z.preprocess((val) => {
-    if (val === undefined || val === null) return [];
-    if (Array.isArray(val)) return val;
-    return [val];
-}, z.array(z.string()));
+const stringToArray = z
+    .union([z.string(), z.array(z.string())])
+    .transform((val) => {
+        if (Array.isArray(val)) {
+            return val
+                .flatMap(v => (typeof v === "string" ? v.split(",") : [v]))
+                .map(v => String(v).trim())
+                .filter(Boolean);
+        }
+        return val.split(",").map(s => s.trim()).filter(Boolean);
+    })
+    .pipe(z.array(z.string()).min(1));
 
 const ObjectIdSchema = z.string({
     required_error: "Object ID is required",
@@ -29,10 +36,9 @@ const createListingSchema = z.object({
     description: z.string()
         .min(10, "Description must be at least 10 characters long")
         .max(5000, "Description must be at most 5000 characters long"),
-    categories: z.array(z.string())
-        .min(1, "At least one category is required"),
-    tags: z.array(z.string())
-        .min(1, "At least one tag is required"),
+    categories: stringToArray.pipe(z.array(z.string())
+        .min(1, "At least one category is required")),
+    tags: stringToArray.pipe(z.array(z.string()).min(1, "At least one tag is required")),
     latitude: z.coerce.number()
         .min(-90, "Latitude must be between -90 and 90")
         .max(90, "Latitude must be between -90 and 90"),

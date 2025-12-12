@@ -12,56 +12,50 @@ import {
 import { removeImages } from '../utils/uploadCloudinary.js';
 
 const createListingService = async (data) => {
-	const {
-		author, name, description, categories,
-		tags, latitude, longitude, permitsRequired,
-		permitsDescription, bestSeason, difficulty,
-		extraAdvice, physicalAddress, uploadedImages
-	} = data;
+    const {
+        author, name, description, categories,
+        tags, latitude, longitude, permitsRequired,
+        permitsDescription, bestSeason, difficulty,
+        extraAdvice, physicalAddress, uploadedImages
+    } = data;
 
-	const location = {
-		type: 'Point',
-		coordinates: [longitude, latitude]
-	};
+    const location = {
+        type: 'Point',
+        coordinates: [longitude, latitude]
+    };
 
-	const session = await mongoose.startSession();
-	session.startTransaction();
+    try {
+        const newListing = await Listing.create({
+            name,
+            description,
+            categories,
+            tags,
+            location,
+            bestSeason,
+            difficulty,
+            permitsRequired,
+            permitsDescription,
+            physicalAddress,
+            extraAdvice,
+            author,
+            images: uploadedImages,
+        });
 
-	try {
-		const [newListing] = await Listing.create([{
-			name,
-			description,
-			categories,
-			tags,
-			location,
-			bestSeason,
-			difficulty,
-			permitsRequired,
-			permitsDescription,
-			physicalAddress,
-			extraAdvice,
-			author,
-			images: uploadedImages,
-		}], { session });
+        const userUpdate = await User.findByIdAndUpdate(
+            author,
+            { $push: { listings: newListing._id } },
+            { new: true }
+        );
 
-		const userUpdate = await User.findByIdAndUpdate(
-			author,
-			{ $push: { listings: newListing._id } },
-			{ new: true, session }
-		);
+        if (!userUpdate) {
+            await Listing.findByIdAndDelete(newListing._id);
+            throw new ApiError(404, "User not found");
+        }
 
-		if (!userUpdate) {
-			throw new ApiError(404, "User not found");
-		}
-		await session.commitTransaction();
-
-		return newListing;
-	} catch (error) {
-		await session.abortTransaction();
-		throw error;
-	} finally {
-		session.endSession();
-	}
+        return newListing;
+    } catch (error) {
+        throw error;
+    } 
 };
 
 const getListingService = async (listingId, userId) => {
@@ -247,10 +241,10 @@ const unlikeListingService = async (listingId, userId) => {
 	}
 }
 
-const updateDescriptionService = async (listingId, updateData) => {
+const updateDescriptionService = async (listingId, description) => {
 	const updatedListing = await Listing.findByIdAndUpdate(
 		listingId,
-		{ description: updateData },
+		{ description },
 		{ new: true }
 	);
 	if (!updatedListing) {
@@ -272,10 +266,10 @@ const updateTipsService = async (listingId, updateData) => {
 	return updatedListing;
 };
 
-const updateTitleService = async (listingId, updateData) => {
+const updateTitleService = async (listingId, title) => {
 	const updatedListing = await Listing.findByIdAndUpdate(
 		listingId,
-		{ name: updateData },
+		{ name: title },
 		{ new: true }
 	);
 

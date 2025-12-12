@@ -26,13 +26,11 @@ const createListing = AsyncHandler(async (req, res) => {
 	if (!author) {
 		throw new ApiError(401, 'Unauthorized');
 	}
-
 	const parsedData = createListingSchema.safeParse({ ...req.body, author: author.toString() });
 	if (!parsedData.success) {
 		const errorMessage = parsedData.error.errors.map(e => e.message).join(', ');
 		throw new ApiError(400, errorMessage);
 	}
-
 	const images = req.files?.images || [];
 	const uploadedImages = await uploadImages(images);
 
@@ -100,7 +98,6 @@ const updateDescription = AsyncHandler(async (req, res) => {
 const updateTips = AsyncHandler(async (req, res) => {
 	const { id } = req.params;
 	const parsed = tipsSchema.safeParse(req.body);
-	console.log("Parsed tips data:", parsed);
 	if (!parsed.success) {
 		const errorMessage = parsed.error.errors.map(e => e.message).join(', ');
 		throw new ApiError(400, errorMessage);
@@ -177,7 +174,6 @@ const updateTagsAndCategories = AsyncHandler(async (req, res) => {
 	const { id } = req.params;
 	const { tags, categories } = req.body;
 	const updateData = {};
-
 	if (tags !== undefined) updateData.tags = tags;
 	if (categories !== undefined) updateData.categories = categories;
 	const updatedListing = await updateTagsAndCategoriesService(id, updateData);
@@ -200,10 +196,14 @@ const sendSuggestionEmail = AsyncHandler(async (req, res) => {
 	}
 	const recipient = process.env.DEFAULT_EMAIL_TO;
 
-	const listingUrl = `${(process.env.FRONTEND_URL || '').replace(/\/$/, '')}/listing/${id}`;
+	const allowedOrigins = process.env.FRONTEND_URL
+        ? process.env.FRONTEND_URL.split(",").map((s) => s.trim()).filter(Boolean)
+        : defaultAllowed;
+    const primaryFrontendUrl = allowedOrigins[0];
+	const listingUrl = `${primaryFrontendUrl}/listing/${id}`;
 
 
-	const subject = `Suggestion for listing: ${listing.name} — ${field}`;
+	const subject = `Suggestion for listing: ${listing.name} - ${field}`;
 	const reporterInfo = (name || email) ? `${name}${email ? ` &lt;${email}&gt;` : ''}` : 'Anonymous';
 	const text = `A suggestion was submitted for listing "${listing.name}" (ID: ${id}).\n\nField: ${field}\nSuggestion:\n${suggestion}\n\nReporter: ${reporterInfo}\n\n Email: ${email}\nListing: ${listingUrl}`;
 	const html = `
@@ -215,7 +215,7 @@ const sendSuggestionEmail = AsyncHandler(async (req, res) => {
 		<p><a href="${listingUrl}">View listing</a></p>
 		`;
 
-	await sendEmail(recipient, subject, text, html);
+	const resp =await sendEmail(recipient, subject, text, html);
 	return res.status(200).json({ success: true, message: 'Suggestion submitted' });
 });
 
