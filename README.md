@@ -1,6 +1,6 @@
-# Unhide Nepal — Server
+# Unhide Spots — Server
 
-Backend API for the Unhide Nepal project. Built with Express, MongoDB (Mongoose), and several supporting libraries for authentication, file uploads, and email.
+Backend API for the Unhide Spots project. Built with Express, MongoDB (Mongoose), and several supporting libraries for authentication, file uploads, and email.
 
 **Quick summary**
 - **Tech stack:** `Node.js`, `Express`, `MongoDB` (`mongoose`), `Passport` (Google OAuth), `cloudinary` for image storage.
@@ -11,7 +11,7 @@ Backend API for the Unhide Nepal project. Built with Express, MongoDB (Mongoose)
 1. Install dependencies:
 
 ```bash
-cd unhide-Nepal-server
+cd unhide-Spots-server
 npm install
 ```
 
@@ -43,7 +43,7 @@ NODE_ENV=development
 # MongoDB
 MONGO_URI=mongodb://localhost:27017
 MONGO_URI_PROD=<production-mongo-uri>
-DB_NAME=unhide_nepal_db
+DB_NAME=unhide_Spots_db
 ISPROD=false
 
 # CORS / Frontend
