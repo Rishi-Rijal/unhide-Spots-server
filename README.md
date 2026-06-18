@@ -2,6 +2,10 @@
 
 Backend API for the Unhide Spots project. Built with Express, MongoDB (Mongoose), and several supporting libraries for authentication, file uploads, and email.
 
+I’m currently migrating from MongoDB to a PostgreSQL server. While making these changes, the server is temporarily offline.
+The reason is that Cosmos DB is costing a lot on Azure despite low traffic.
+Hopefully, I’ll be able to complete the changes in the next few weeks. I also have exams coming up, so there might be a slight delay.
+
 **Quick summary**
 - **Tech stack:** `Node.js`, `Express`, `MongoDB` (`mongoose`), `Passport` (Google OAuth), `cloudinary` for image storage.
 - **Auth:** Cookie-based access tokens, refresh flow, password reset via email, Google OAuth.
